@@ -1,0 +1,72 @@
+<?php
+
+include "db_con.php";
+
+$registrationError = ''; // Error message
+
+// Registration form handling
+if (isset($_POST['register'])){
+    $username = $_POST['username'];
+    $password = $_POST['password']; 
+    $role = $_POST['role'];
+
+// Password validation
+    $passwordValidation = [
+        'minLength' => 8,           // Minimum length
+        'requireUppercase' => true,  // Require one uppercase letter
+        'requireLowercase' => true,  // Require one lowercase letter
+        'requireDigit' => true,     // Require one digit
+        ];
+
+        if (!pass_check($password, $passwordValidation)) {
+        // Error message
+        $registrationError = 'Password is weak.';
+
+        } else {
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT); //password hashing
+        $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $username, $hashed_password, $role);
+        $result = $stmt->execute();
+         
+        if ($result) {
+            header('Location: ../landing.php');
+            exit;
+        } else {
+            $registrationError = "Error: " . $stmt->error;
+        }
+    } 
+  }
+
+    // Function to check if a password meets the specified complexity rules
+  function pass_check($pass, $rules)
+  {
+    $errors = [];
+  
+  if ($rules['minLength'] > 0 && strlen($pass) < $rules['minLength']) {
+    $errors[] = 'Password must be ' . $rules['minLength'] . ' characters long.';
+  }
+  
+  if ($rules['requireUppercase'] && !preg_match('/[A-Z]/', $pass)) {
+    $errors[] = 'Password must contain an uppercase letter.';
+  }
+  
+  if ($rules['requireLowercase'] && !preg_match('/[a-z]/', $pass)) {
+    $errors[] = 'Password must contain a lowercase letter.';
+  }
+  
+  if ($rules['requireDigit'] && !preg_match('/[0-9]/', $pass)) {
+    $errors[] = 'Password must contain a digit.';
+  }
+  
+  return empty($errors);
+  }
+
+
+echo "<pre>";
+print_r($_POST);
+echo "</pre>";
+
+
+// Close the database connection
+$conn->close();
+?>
